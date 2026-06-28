@@ -1,0 +1,487 @@
+openapi: 3.0.3
+info:
+  title: MiniTaskManager API
+  version: 1.0.0
+  description: API backend para autenticacion de usuarios y gestion de tareas.
+servers:
+  - url: http://localhost:5000/api
+    description: Servidor local
+tags:
+  - name: Health
+    description: Endpoints de prueba de la API
+  - name: Auth
+    description: Autenticacion y sesion de usuarios
+  - name: Tasks
+    description: Gestion de tareas del usuario autenticado
+paths:
+  /test:
+    get:
+      tags:
+        - Health
+      summary: Comprueba que la API responde
+      responses:
+        "200":
+          description: API disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResponse"
+              example:
+                message: Welcome to the Mini Task Manager API
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Registra un usuario nuevo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            example:
+              user: elias
+              email: elias@correo.com
+              password: pass123
+      responses:
+        "201":
+          description: Usuario registrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+              example:
+                user:
+                  id: 667f1f77bcf86cd799439011
+                  user: elias
+                  email: elias@correo.com
+                token: JWT_TOKEN
+        "400":
+          description: Datos invalidos o usuario/email ya registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageError"
+              example:
+                message: User or email already exists
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Inicia sesion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              user: elias
+              password: pass123
+      responses:
+        "200":
+          description: Login correcto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+              example:
+                user:
+                  id: 667f1f77bcf86cd799439011
+                  user: elias
+                  email: elias@correo.com
+                token: JWT_TOKEN
+        "401":
+          description: Credenciales invalidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageError"
+              example:
+                message: Invalid credentials
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Obtiene el usuario autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Usuario autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserResponse"
+              example:
+                user:
+                  id: 667f1f77bcf86cd799439011
+                  user: elias
+                  email: elias@correo.com
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Cierra sesion del lado del cliente
+      description: Como JWT es stateless, el backend solo devuelve un mensaje de exito.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logout correcto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                message: Logout successful
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /tasks:
+    post:
+      tags:
+        - Tasks
+      summary: Crea una tarea
+      description: Actualmente el backend crea la tarea directamente desde el body, por lo que el campo user debe enviarse en la peticion.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+            example:
+              title: Comprar pan
+              description: Pasar por la panaderia
+              completed: false
+              user: 667f1f77bcf86cd799439011
+      responses:
+        "201":
+          description: Tarea creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          description: Datos invalidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Task validation failed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    get:
+      tags:
+        - Tasks
+      summary: Lista las tareas del usuario autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista de tareas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /tasks/{id}:
+    put:
+      tags:
+        - Tasks
+      summary: Actualiza una tarea
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskRequest"
+            example:
+              title: Comprar pan y leche
+              description: Pasar por la panaderia y el supermercado
+              completed: true
+      responses:
+        "200":
+          description: Tarea actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    delete:
+      tags:
+        - Tasks
+      summary: Elimina una tarea
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: Tarea eliminada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    patch:
+      tags:
+        - Tasks
+      summary: Cambia el estado completed de una tarea
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: Tarea actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TaskId:
+      name: id
+      in: path
+      required: true
+      description: ID de la tarea
+      schema:
+        type: string
+        example: 667f20c6bcf86cd799439022
+
+  responses:
+    Unauthorized:
+      description: Token faltante, invalido o usuario no autorizado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthErrorResponse"
+          example:
+            message: Not authorized
+    BadRequest:
+      description: Error de validacion o recurso no encontrado/no autorizado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Task not found or user not authorized
+
+  schemas:
+    TestResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    RegisterRequest:
+      type: object
+      properties:
+        user:
+          type: string
+          example: elias
+        email:
+          type: string
+          format: email
+          example: elias@correo.com
+        password:
+          type: string
+          example: pass123
+      required:
+        - user
+        - email
+        - password
+
+    LoginRequest:
+      type: object
+      properties:
+        user:
+          type: string
+          example: elias
+        password:
+          type: string
+          example: pass123
+      required:
+        - user
+        - password
+
+    PublicUser:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 667f1f77bcf86cd799439011
+        user:
+          type: string
+          example: elias
+        email:
+          type: string
+          format: email
+          example: elias@correo.com
+      required:
+        - id
+        - user
+        - email
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/PublicUser"
+        token:
+          type: string
+          example: JWT_TOKEN
+      required:
+        - user
+        - token
+
+    CurrentUserResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/PublicUser"
+      required:
+        - user
+
+    CreateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Comprar pan
+        description:
+          type: string
+          example: Pasar por la panaderia
+        completed:
+          type: boolean
+          default: false
+          example: false
+        user:
+          type: string
+          description: ID del usuario propietario de la tarea.
+          example: 667f1f77bcf86cd799439011
+      required:
+        - title
+        - user
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Comprar pan y leche
+        description:
+          type: string
+          example: Pasar por la panaderia y el supermercado
+        completed:
+          type: boolean
+          example: true
+      minProperties: 1
+
+    Task:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 667f20c6bcf86cd799439022
+        title:
+          type: string
+          example: Comprar pan
+        description:
+          type: string
+          example: Pasar por la panaderia
+        completed:
+          type: boolean
+          example: false
+        user:
+          type: string
+          example: 667f1f77bcf86cd799439011
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-06-28T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2026-06-28T00:00:00.000Z
+      required:
+        - _id
+        - title
+        - completed
+        - user
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    MessageError:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    AuthErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        error:
+          type: string
+      required:
+        - message

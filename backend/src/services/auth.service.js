@@ -58,4 +58,31 @@ async function loginUser(userData){
     });
 }
 
-export { registerUser, loginUser };
+async function getCurrentUser(userId){
+    return new Promise(async (resolve, reject)=> {
+        try {
+            const user = await User.findById(userId).select('-password');
+            if(!user){
+                return reject(new Error('User not found'));
+            }
+            resolve({ id: user._id, user: user.user, email: user.email });
+        } catch(error) {
+            console.error('Error in getCurrentUser service:');
+            reject(error);
+        }
+    });
+}
+
+async function logoutUser(userId){
+    return new Promise(async (resolve, reject)=> {
+        try {
+            // Since JWT is stateless, logout can be handled on the client side by simply deleting the token.
+            resolve({ message: "Logout successful" });
+        } catch(error) {
+            console.error('Error in logout service:');
+            reject(error);
+        }
+    });
+}
+
+export { registerUser, loginUser, getCurrentUser, logoutUser };
