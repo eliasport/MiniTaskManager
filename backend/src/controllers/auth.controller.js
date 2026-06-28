@@ -1,4 +1,4 @@
-import { registerUser, loginUser } from '../services/auth.service.js';
+import { registerUser, loginUser, getCurrentUser, logoutUser } from '../services/auth.service.js';
 
 async function register(req, res){
     try {
@@ -27,10 +27,17 @@ async function login(req, res){
     }
 }
 
-async function getCurrentUser(req, res){
+async function currentUser(req, res){
+    // try {
+    //     const user = req.user;
+    //     res.status(200).json({ user: { id: user._id, user: user.user, email: user.email } });
+    // } catch(err){
+    //     res.status(500).json({ message: err.message });
+    // }
     try {
-        const user = req.user;
-        res.status(200).json({ user: { id: user._id, user: user.user, email: user.email } });
+        const userId = req.user._id;
+        const user = await getCurrentUser(userId);
+        res.status(200).json({ user });
     } catch(err){
         res.status(500).json({ message: err.message });
     }
@@ -38,7 +45,14 @@ async function getCurrentUser(req, res){
 
 async function logout(req, res){
     // Since JWT is stateless, logout can be handled on the client side by simply deleting the token.
-    res.status(200).json({ message: "Logout successful" });
+    // res.status(200).json({ message: "Logout successful" });
+    try {
+        const userId = req.user._id;
+        const result = await logoutUser(userId);
+        res.status(200).json(result);
+    } catch(err){
+        res.status(500).json({ message: err.message });
+    }
 }
 
-export { register, login, getCurrentUser, logout };
+export { register, login, currentUser, logout };
