@@ -15,7 +15,7 @@ app.use((req, res)=> {
     res.status(404).json({ message: "Endpoint not found" });
 });
 
-app.use((err, req, res)=> {
+app.use((err, req, res, next)=> {
     console.error(`Error: ${err}`);
     res.status(500).json({ message: "Internal server error" });
 });
