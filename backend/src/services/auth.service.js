@@ -40,7 +40,7 @@ async function registerUser(userData){
 async function loginUser(userData){
     return new Promise(async (resolve, reject)=> {
         try {
-            const existingUser = await User.findOne({ user: userData.user });
+            const existingUser = await User.findOne({ email: userData.email });
             if(!existingUser){
                 return reject(new Error('Invalid credentials'));
             }
