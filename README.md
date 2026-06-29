@@ -163,13 +163,13 @@ Errores posibles:
 
 #### POST `/api/auth/login`
 
-Inicia sesion con usuario y password.
+Inicia sesion con email y password.
 
 Body:
 
 ```json
 {
-  "user": "elias",
+  "email": "elias@correo.com",
   "password": "pass123"
 }
 ```

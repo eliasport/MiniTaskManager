@@ -78,7 +78,7 @@ paths:
             schema:
               $ref: "#/components/schemas/LoginRequest"
             example:
-              user: elias
+              email: elias@correo.com
               password: pass123
       responses:
         "200":
@@ -337,14 +337,15 @@ components:
     LoginRequest:
       type: object
       properties:
-        user:
+        email:
           type: string
-          example: elias
+          format: email
+          example: elias@correo.com
         password:
           type: string
           example: pass123
       required:
-        - user
+        - email
         - password
 
     PublicUser:
