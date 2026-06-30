@@ -11,7 +11,12 @@ async function createTaskController(req, res) {
 
 async function getTasksController(req, res) {
     try {
-        const tasks = await getTasksByUser(req.user._id);
+        const tasks = await getTasksByUser(req.user._id, {
+            search: req.query.search, 
+            status: req.query.status, 
+            page: parseInt(req.query.page) || 1, 
+            limit: parseInt(req.query.limit) || 10
+        });
         res.status(200).json(tasks);
     } catch (err) {
         res.status(400).json({ error: err.message });

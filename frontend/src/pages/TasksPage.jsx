@@ -15,7 +15,7 @@ function TasksPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const counters = useMemo(() => {
-    const completed = tasks.filter((task) => task.completed).length
+    const completed = tasks.filter((task) => task.completed).length; 
     return {
       completed,
       pending: tasks.length - completed,
@@ -34,6 +34,9 @@ function TasksPage() {
     try {
       const taskList = await taskService.getTasks()
       setTasks(taskList)
+      // const { data } = await taskService.getTasks() 
+      // console.log('data', data); 
+      // setTasks(data.tasks)
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.message || 'No se pudieron cargar las tareas.')
     } finally {

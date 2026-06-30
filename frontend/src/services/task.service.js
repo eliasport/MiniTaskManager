@@ -1,8 +1,10 @@
 import api from './api'
 
 async function getTasks() {
-  const { data } = await api.get('/tasks')
-  return data
+  const { data } = await api.get('/tasks'); 
+  return data.Tasks || []; 
+  // const data = await api.get('/tasks')
+  // return data
 }
 
 async function createTask(task) {

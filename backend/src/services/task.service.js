@@ -12,11 +12,33 @@ async function createTask(taskData){
     });
 }
 
-async function getTasksByUser(userId){
+async function getTasksByUser(userId, filter = {}){
     return new Promise(async (resolve, reject)=> {
         try {
-            const tasks = await Task.find({ user: userId }); 
-            resolve(tasks);
+            const { search, status, page = 1, limit = 10 } = filter; 
+            const query = { user: userId }; 
+            if (search) {
+                query.$or = [
+                    { title: { $regex: search, $options: 'i' } }, 
+                    { description: { $regex: search, $options: 'i' } }
+                ]; 
+            }
+            if (status){
+                query.completed = status === "completed"; 
+            }
+            const tasks = await Task.find(query)
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .sort({ createdAt: -1 }); 
+
+            const total = await Task.countDocuments(query); 
+            // resolve({tasks, total, page, limit});
+            resolve({
+                "Tasks": tasks, 
+                "Page": page, 
+                "TotalPages": Math.ceil(total / limit), 
+                "TotalTasks": total
+            }); 
         } catch (err){
             reject(err);
         }
