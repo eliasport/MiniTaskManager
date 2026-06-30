@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
-    user: { type: String, required: [true, "User is required"], unique: true }, 
-    email: { type: String, required: [true, "Email is required"], unique: true }, 
+    user: { type: String, required: [true, "User is required"], unique: true, trim: true }, 
+    email: { type: String, required: [true, "Email is required"], unique: true, trim: true, lowercase: true }, 
     password: { type: String, required: [true, "Password is required"] },
 }, { timestamps: true});
 
@@ -14,7 +14,8 @@ userSchema.pre('save', async function(){
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt); 
     } catch (error){
-        next(error);
+        // next(error);
+        throw error; 
     }
 }); 
 

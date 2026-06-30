@@ -1,12 +1,16 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js'; 
 
+function normalizeEmail(email) {
+    return email?.trim().toLowerCase();
+}
+
 async function registerUser(userData){
     // console.log("entra en el registro de usuarios"); 
     return (new Promise(async (resolve, reject)=> {
         // console.log("antes del try"); 
         try {
-            const existingUser = await User.findOne({ $or: [{user: userData.user}, { email: userData.email }] });
+            const existingUser = await User.findOne({ $or: [{user: userData.user}, { email: normalizeEmail(userData.email) }] });
             // console.log(`Existing user: ${existingUser}`);
             if(existingUser) {
                 return reject(new Error('User or email already exists'));
@@ -39,8 +43,14 @@ async function registerUser(userData){
 
 async function loginUser(userData){
     return new Promise(async (resolve, reject)=> {
+        // console.log(userData); 
+        // console.log(userData.email); 
         try {
-            const existingUser = await User.findOne({ email: userData.email });
+            // console.log("Entra en el try"); 
+            const email = normalizeEmail(userData.email);
+            // const existingUser = await User.findOne({ email: normalizeEmail(userData.email) });
+            const existingUser = await User.findOne({ "email": email }); 
+            // console.log(existingUser);
             if(!existingUser){
                 return reject(new Error('Invalid credentials'));
             }
@@ -50,7 +60,14 @@ async function loginUser(userData){
                 return reject(new Error('Invalid credentials'));
             }
 
-            resolve({ user: { id: existingUser._id, user: existingUser.user, email: existingUser.email }, token: generateToken(existingUser._id) });
+            resolve({ 
+                user: { 
+                    id: existingUser._id, 
+                    user: existingUser.user, 
+                    email: existingUser.email 
+                }, 
+                token: generateToken(existingUser._id) 
+            });
         } catch(error) {
             console.error('Error in login service:');
             reject(error);
