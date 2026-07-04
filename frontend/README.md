@@ -95,8 +95,6 @@ frontend/
       main.jsx
     assets/
       hero.png
-      react.svg
-      vite.svg
     components/
       Alert.jsx
       TaskForm.jsx

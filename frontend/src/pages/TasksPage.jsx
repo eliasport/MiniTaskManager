@@ -14,8 +14,27 @@ function TasksPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [filters, setFilters] = useState({
+    search: '',
+    status : '', 
+    page: 1,
+    limit: 10,
+  });
+
+  const [search, setSearch] = useState(filters.search); 
+  const [status, setStatus] = useState(filters.status); 
+  const [page, setPage] = useState(filters.page); 
+  const [limit, setLimit] = useState(filters.limit); 
+
+  function resetTaskFilter() {
+    // setSearch(filters.search); 
+    // setStatus(filters.status); 
+    setPage(filters.page); 
+    setLimit(filters.limit);
+  }
+
   const counters = useMemo(() => {
-    const completed = tasks.filter((task) => task.completed).length; 
+    const completed = tasks.filter((task) => task.completed).length;
     return {
       completed,
       pending: tasks.length - completed,
@@ -25,14 +44,14 @@ function TasksPage() {
 
   useEffect(() => {
     loadTasks()
-  }, [])
+  }, [filters]); 
 
   async function loadTasks() {
     setIsLoading(true)
     setError('')
 
     try {
-      const taskList = await taskService.getTasks()
+      const taskList = await taskService.getTasks({ search, status, page, limit })
       setTasks(taskList)
       // const { data } = await taskService.getTasks() 
       // console.log('data', data); 
