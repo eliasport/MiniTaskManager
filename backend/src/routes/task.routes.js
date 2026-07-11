@@ -1,5 +1,5 @@
 import express from 'express';
-import { createTaskController, getTasksController, updateTaskController, removeTaskController, toggleTaskController } from '../controllers/task.controller.js';
+import { createTaskController, getTasksController, updateTaskController, removeTaskController, toggleTaskController, getAllTasksController } from '../controllers/task.controller.js';
 import protect from '../middlewares/auth.middleware.js';
 
 const taskRouter = express.Router();
@@ -9,5 +9,7 @@ taskRouter.get('/', protect, getTasksController);
 taskRouter.put('/:id', protect, updateTaskController);
 taskRouter.delete('/:id', protect, removeTaskController);
 taskRouter.patch('/:id', protect, toggleTaskController);
+
+taskRouter.get('/all', getAllTasksController); 
 
 export default taskRouter;

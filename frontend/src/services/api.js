@@ -21,5 +21,24 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const isTokenExpired = 
+      error.response?.status === 401 &&
+      error.response?.data?.code === 'TOKEN_EXPIRED'
+
+    if (isTokenExpired) {
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(USER_KEY)
+
+      if(window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(error)
+  },
+)
+
 export { API_BASE_URL, TOKEN_KEY, USER_KEY }
 export default api

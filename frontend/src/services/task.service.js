@@ -4,9 +4,9 @@ async function getTasks({ search, status, page, limit }) {
   const { data } = await api.get('/tasks', { params: { search, status, page, limit } }); 
   // console.log(data); 
   // console.log(data.Tasks); 
-  return data.Tasks || []; 
+  // return data.Tasks || []; 
   // const data = await api.get('/tasks')
-  // return data
+  return data
 }
 
 async function createTask(task) {

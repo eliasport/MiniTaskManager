@@ -1,5 +1,18 @@
 import Task from "../models/Task.js";
 
+function parsePositiveInteger(value, fieldname, defaultValue) {
+    if(value === undefined || value === null || value === '') {
+        return defaultValue; 
+    }
+    const numberValue = Number(value); 
+
+    if(!Number.isInteger(numberValue) || numberValue <= 0) {
+        throw new Error(`${fieldname} must be a positive integer`);
+    }
+
+    return numberValue;
+}
+
 async function createTask(taskData){
     return new Promise(async (resolve, reject)=> {
         try {
@@ -16,6 +29,8 @@ async function getTasksByUser(userId, filter = {}){
     return new Promise(async (resolve, reject)=> {
         try {
             const { search, status, page = 1, limit = 10 } = filter; 
+            const normalizedPage = parsePositiveInteger(page, "Page", 1); 
+            const normalizedLimit = parsePositiveInteger(limit, "Limit", 10); 
             const query = { user: userId }; 
             if (search) {
                 query.$or = [
@@ -23,21 +38,32 @@ async function getTasksByUser(userId, filter = {}){
                     { description: { $regex: search, $options: 'i' } }
                 ]; 
             }
-            if (status){
-                query.completed = status === "completed"; 
+            if (status === "true" || status === true){
+                query.completed = true; 
+            }
+            if (status === "false" || status === false){
+                query.completed = false; 
             }
             const tasks = await Task.find(query)
-                .skip((page - 1) * limit)
-                .limit(limit)
+                .skip((normalizedPage - 1) * normalizedLimit)
+                .limit(normalizedLimit)
                 .sort({ createdAt: -1 }); 
 
             const total = await Task.countDocuments(query); 
+            const userTotalTasks = await Task.countDocuments({ user: userId });
+            const userCompletedTasks = await Task.countDocuments({ user: userId, completed: true });
+            const userPendingTasks = await Task.countDocuments({ user: userId, completed: false });
             // resolve({tasks, total, page, limit});
             resolve({
                 "Tasks": tasks, 
-                "Page": page, 
-                "TotalPages": Math.ceil(total / limit), 
-                "TotalTasks": total
+                "Page": normalizedPage, 
+                "TotalPages": Math.ceil(total / normalizedLimit), 
+                "TotalTasks": total,
+                "UserStats": {
+                    "Total": userTotalTasks,
+                    "Completed": userCompletedTasks,
+                    "Pending": userPendingTasks
+                }
             }); 
         } catch (err){
             reject(err);
@@ -91,4 +117,15 @@ async function toggleTask(taskId, userId){
     }); 
 }
 
-export { createTask, getTasksByUser, updateTask, deleteTask, toggleTask };
+async function getAllTasks(){
+    return new Promise(async (resolve, reject) => {
+        try {
+            const tasks = await Task.find().sort({ createdAt: -1 });
+            resolve(tasks);
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+export { createTask, getTasksByUser, updateTask, deleteTask, toggleTask, getAllTasks, parsePositiveInteger };
