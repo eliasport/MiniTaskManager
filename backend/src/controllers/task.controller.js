@@ -1,4 +1,4 @@
-import { createTask, getTasksByUser, updateTask, deleteTask, toggleTask } from '../services/task.service.js'; 
+import { createTask, getTasksByUser, updateTask, deleteTask, toggleTask, getAllTasks, parsePositiveInteger } from '../services/task.service.js'; 
 
 async function createTaskController(req, res) {
     try {
@@ -14,8 +14,12 @@ async function getTasksController(req, res) {
         const tasks = await getTasksByUser(req.user._id, {
             search: req.query.search, 
             status: req.query.status, 
-            page: parseInt(req.query.page) || 1, 
-            limit: parseInt(req.query.limit) || 10
+            // page: parseInt(req.query.page) || 1, 
+            // limit: parseInt(req.query.limit) || 10
+            // page: parsePositiveInteger(req.query.page, 1),
+            // limit: parsePositiveInteger(req.query.limit, 10)
+            page: req.query.page, 
+            limit: req.query.limit
         });
         res.status(200).json(tasks);
     } catch (err) {
@@ -51,4 +55,13 @@ async function toggleTaskController(req, res) {
     }
 }
 
-export { createTaskController, getTasksController, updateTaskController, removeTaskController, toggleTaskController };
+async function getAllTasksController(req, res) {
+    try {
+        const tasks = await getAllTasks(); 
+        res.status(200).json(tasks);
+    } catch (err){
+        res.status(400).json({ error: err.message });
+    }
+}
+
+export { createTaskController, getTasksController, updateTaskController, removeTaskController, toggleTaskController, getAllTasksController };
