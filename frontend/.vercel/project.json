@@ -6,10 +6,10 @@
     "createdAt": 1783889980385,
     "framework": "vite",
     "devCommand": null,
-    "installCommand": null,
-    "buildCommand": null,
-    "outputDirectory": null,
-    "rootDirectory": null,
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist",
+    "rootDirectory": "frontend",
     "directoryListing": false,
     "nodeVersion": "24.x"
   }
