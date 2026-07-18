@@ -11,16 +11,17 @@ async function registerUser(userData){
         // console.log("antes del try"); 
         try {
             const existingUser = await User.findOne({ $or: [{user: userData.user}, { email: normalizeEmail(userData.email) }] });
+            // console.log(existingUser); 
             // console.log(`Existing user: ${existingUser}`);
             if(existingUser) {
                 return reject(new Error('User or email already exists'));
             }
-            console.log(userData); 
+            // console.log(userData); 
             const user = new User(userData);
             await user.save();
-            console.log(`User._id: ${user._id}`); 
+            // console.log(`User._id: ${user._id}`); 
             const token = generateToken(user._id);
-            console.log(`Token: ${token}`);
+            // console.log(`Token: ${token}`);
             resolve({ user: { id: user._id , user: user.user, email: user.email }, token });
 
             /*

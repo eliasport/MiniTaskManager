@@ -99,7 +99,7 @@ function TasksPage() {
         completed: data.UserStats?.Completed || 0,
         pending: data.UserStats?.Pending || 0,
       });
-      console.log(`Pagina actual: ${data.Page}\nTotal de paginas: ${data.TotalPages}\nTotal de tareas: ${data.TotalTasks}`);
+      // console.log(`Pagina actual: ${data.Page}\nTotal de paginas: ${data.TotalPages}\nTotal de tareas: ${data.TotalTasks}`);
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.message || 'No se pudieron cargar las tareas.')
     } finally {
@@ -154,6 +154,8 @@ function TasksPage() {
     setSuccess('')
     setIsSubmitting(true)
 
+    console.log(form); 
+
     try {
       // if (editingTask) {
       //   const updatedTask = await taskService.updateTask(editingTask._id, form)
@@ -176,9 +178,10 @@ function TasksPage() {
         setEditingTask(null);
         setSuccess('Tarea actualizada.');
       } else { 
+        // console.log(user); 
         await taskService.createTask({
-          ...form, 
-          user: user.id, 
+          ...form
+          // user: user.id, 
         });
         setSuccess('Tarea creada.');
       };
@@ -404,6 +407,7 @@ function TasksPage() {
           <TaskList
             isLoading={isLoading}
             tasks={tasks}
+            onEdit={setEditingTask}
             onToggle={handleToggle}
             onDelete={handleDelete}
           ></TaskList>
