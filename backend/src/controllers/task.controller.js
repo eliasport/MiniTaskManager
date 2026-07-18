@@ -2,7 +2,13 @@ import { createTask, getTasksByUser, updateTask, deleteTask, toggleTask, getAllT
 
 async function createTaskController(req, res) {
     try {
-        const task = await createTask(req.body);
+        // const task = await createTask(req.body);
+        const { title, description } = req.body; 
+        const task = await createTask({
+            title, 
+            description,
+            user: req.user._id
+        })
         res.status(201).json(task);
     } catch (err) {
         res.status(400).json({ error: err.message });
