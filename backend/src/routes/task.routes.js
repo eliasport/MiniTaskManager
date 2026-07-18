@@ -10,6 +10,7 @@ taskRouter.put('/:id', protect, updateTaskController);
 taskRouter.delete('/:id', protect, removeTaskController);
 taskRouter.patch('/:id', protect, toggleTaskController);
 
+// Linea de código temporal para obtener todas las tareas sin protección
 taskRouter.get('/all', getAllTasksController); 
 
 export default taskRouter;
