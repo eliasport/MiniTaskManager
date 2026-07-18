@@ -1,0 +1,90 @@
+Revisé todo el proyecto sin modificar archivos. La arquitectura general es correcta:
+
+  React/Vercel → Express/Vercel → Mongoose → MongoDB Atlas
+
+  Sin embargo, hay problemas de seguridad, conexión y despliegue que conviene resolver antes de considerar estable la
+  implementación.
+
+  Hallazgos críticos
+
+  1. Existe un endpoint que expone todas las tareas sin autenticación.
+     backend/src/routes/task.routes.js:13 registra GET /api/tasks/all sin protect, y backend/src/services/task.service.js:120
+     devuelve tareas de todos los usuarios. Debes eliminarlo o protegerlo y restringirlo a administradores.
+
+  2. El registro escribe contraseñas y tokens en los logs de Vercel.
+     backend/src/services/auth.service.js:19 imprime userData, que contiene la contraseña, y en la línea 24 imprime el JWT.
+     Esos console.log deben eliminarse.
+
+  3. El backend tiene una clave JWT pública como fallback.
+     backend/src/config/env.js:7 usa some_secret_key cuando falta la variable. En producción, una variable ausente permitiría
+     fabricar tokens válidos. El backend debería fallar al iniciar si falta JWT_SECRET.
+
+  4. El usuario de una tarea se recibe desde el frontend.
+     backend/src/controllers/task.controller.js:5 crea la tarea con todo req.body, mientras frontend/src/pages/
+     TasksPage.jsx:179 envía user.id. Un cliente puede enviar el ID de otro usuario. El backend debe ignorar ese campo y usar
+     siempre req.user._id.
+
+  5. La URI actual de Atlas se concatena incorrectamente.
+     La comprobación segura indica que tu URI contiene parámetros ?, mientras el nombre de la base está separado. backend/src/
+     config/db.js:7 agrega /task_manager después de toda la URI, dejándolo después de ?. Debes utilizar una sola variable
+     MONGO_URI con la base incluida antes de ? y conectar directamente con mongoose.connect(env.MONGO_URI).
+
+  Prioridad alta
+
+  6. La gestión de conexión no está preparada correctamente para serverless.
+     connectDB() ejecuta process.exit(1) en backend/src/config/db.js:12, por lo que el catch de server.js no puede manejar el
+     error. En Vercel conviene cachear la promesa de conexión y reutilizarla entre invocaciones. Mongoose recomienda reutilizar
+     la conexión en runtimes serverless (https://mongoosejs.com/docs/lambda.html).
+
+  7. La configuración del backend usa propiedades antiguas de Vercel.
+     backend/vercel.json:2 utiliza version, builds y routes. version y builds son configuración legacy; Express ahora tiene
+     detección automática. Vercel soporta Express sin configuración adicional
+     (https://vercel.com/docs/frameworks/backend/express) y desaconseja builds y version
+     (https://vercel.com/docs/project-configuration/vercel-json).
+
+  8. Los cambios de Vercel y Atlas están sin confirmar en Git.
+     backend/vercel.json es nuevo y server.js, db.js, paquetes y .gitignore están modificados localmente. Un despliegue
+     conectado a Git no incluirá esos cambios hasta que estén confirmados y enviados.
+
+  9. El frontend no tiene el rewrite requerido para React Router.
+     Utilizas BrowserRouter, pero no existe frontend/vercel.json. Al recargar directamente /login o /tasks, Vercel puede
+     responder 404. Vercel documenta el rewrite hacia /index.html para SPA de Vite. Guía oficial de Vite en Vercel
+     (https://vercel.com/docs/frameworks/frontend/vite).
+
+  10. CORS permite cualquier origen.
+     backend/src/app.js:9 ejecuta cors() sin configuración. En producción debería aceptar solamente la URL del frontend
+     desplegado.
+
+  11. La edición de tareas está rota en el frontend.
+     frontend/src/pages/TasksPage.jsx:404 no pasa onEdit a TaskList, pero frontend/src/components/TaskList.jsx:44 intenta
+     ejecutarlo.
+
+  12. El botón de filtros depende de una variable global.
+     frontend/src/pages/TasksPage.jsx:119 debería recibir event como parámetro. Además, en la línea 337 muestra totalPages como
+     “total de tareas”; debería mostrar totalTasks.
+
+  Mejoras recomendadas
+
+  13. Limitar limit a un máximo razonable, escapar el texto utilizado como $regex y agregar un índice { user: 1, createdAt:
+     -1 }.
+
+  14. Permitir en actualizaciones solamente title, description y completed, usando runValidators: true; actualmente podría
+     modificarse el propietario.
+
+  15. Renombrar variables privadas del backend a MONGO_URI, JWT_SECRET y JWT_EXPIRES_IN. El prefijo VITE_ está destinado a
+     variables expuestas al frontend; Vite advierte que su contenido queda incluido en el bundle. Documentación de Vite
+     (https://main.vite.dev/guide/env-and-mode).
+
+  16. Configurar VITE_API_URL en el proyecto frontend de Vercel. No existe .env local de frontend, aunque puede estar
+     correctamente configurada en el dashboard. Si falta en producción, frontend/src/services/api.js:3 intentará conectarse a
+     localhost.
+
+  17. Corregir README y OpenAPI: la documentación no refleja la paginación actual y contiene rutas/body antiguos.
+  18. Agregar pruebas de autenticación, aislamiento entre usuarios, paginación, filtros y conexión. El backend actualmente no
+     tiene pruebas reales.
+
+  Verificación
+
+  El backend pasó comprobación de sintaxis en sus 15 archivos JavaScript. El frontend pasó oxlint con dos advertencias:
+  dependencia faltante de loadTasks en useEffect y parámetro current sin usar. No probé el despliegue real porque no tengo la
+  URL ni acceso a la configuración de los dashboards de Vercel y Atlas.
