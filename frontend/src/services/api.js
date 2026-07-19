@@ -1,6 +1,9 @@
 import axios from 'axios'
+// import { env } from 'process'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_MONGO_URL
+console.log(API_BASE_URL)
 const TOKEN_KEY = 'mini_task_manager_token'
 const USER_KEY = 'mini_task_manager_user'
 
