@@ -4,12 +4,15 @@ dotenv.config();
 
 // Las variables de entorno se definen en el archivo .env y se acceden a través de process.env
 // Si alguna variable de entorno no está definida, en producción el programa debe de fallar y no permitir acceder al servicio
+// console.log(process.env.VITE_MONGO_URL); 
 const env = {
     PORT: process.env.VITE_PORT || 5000, 
     JWT_SECRET: process.env.VITE_JWT_SECRET || 'some_secret_key', 
     JWT_EXPIRES_IN: process.env.VITE_JWT_EXPIRES_IN || '24h',
-    MONGO_DB_URL: process.env.VITE_MONGO_URL || 'mongodb://localhost:27017',
+    // MONGO_DB_URL: process.env.VITE_MONGO_URL || 'mongodb://localhost:27017',
+    MONGO_DB_URL: process.env.VITE_MONGO_URL,
     MONGO_DB_NAME: process.env.VITE_MONGO_DB_NAME || 'task_manager'
 }
+// console.log(env.MONGO_DB_URL); 
 
 export default env;
