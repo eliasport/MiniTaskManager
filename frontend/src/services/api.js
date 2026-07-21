@@ -48,5 +48,4 @@ api.interceptors.response.use(
   },
 )
 
-export { API_BASE_URL, TOKEN_KEY, USER_KEY }
-export default api
+export { API_BASE_URL, TOKEN_KEY, USER_KEY, api }

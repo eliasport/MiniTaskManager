@@ -1,4 +1,4 @@
-import api from './api'
+import api from './api.js'
 
 async function login(credentials) {
   const { data } = await api.post('/auth/login', credentials)
