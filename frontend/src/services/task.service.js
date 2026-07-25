@@ -1,4 +1,4 @@
-import api from './api'
+import api from './api.js'
 
 async function getTasks({ search, status, page, limit }) {
   const { data } = await api.get('/tasks', { params: { search, status, page, limit } }); 
