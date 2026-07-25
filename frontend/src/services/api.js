@@ -1,13 +1,13 @@
 import axios from 'axios'
 
 // Este fragmento de código define la URL base para desarrollo
-// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 // Este fracmento de código define la URL base para producción
-const API_BASE_URL = import.meta.env.VITE_API_URL
-if(!API_BASE_URL) {
-  throw new Error('URL variable is not defined'); 
-}
+// const API_BASE_URL = import.meta.env.VITE_API_URL
+// if(!API_BASE_URL) {
+//   throw new Error('URL variable is not defined'); 
+// }
 
 const TOKEN_KEY = 'mini_task_manager_token'
 const USER_KEY = 'mini_task_manager_user'
@@ -49,4 +49,5 @@ api.interceptors.response.use(
 )
 
 export { API_BASE_URL, TOKEN_KEY, USER_KEY }
-export default api
+
+export default api; 

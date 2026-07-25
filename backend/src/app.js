@@ -9,6 +9,8 @@ const app = express();
 app.use(cors({origin: '*'}));
 app.use(express.json());
 
+app.get("/", (req, res) => res.json({status: "API funcionando ✅"}));
+
 app.use('/api', routes);
 
 app.use((req, res)=> {
