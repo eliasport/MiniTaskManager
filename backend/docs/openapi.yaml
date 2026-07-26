@@ -1,24 +1,38 @@
 openapi: 3.0.3
 info:
   title: MiniTaskManager API
-  version: 1.0.0
-  description: API backend para autenticacion de usuarios y gestion de tareas.
+  version: 1.1.0
+  description: |
+    API REST para autenticacion de usuarios y gestion de tareas personales.
+    Las rutas de tareas utilizan el usuario obtenido del token JWT.
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
+
 servers:
   - url: http://localhost:5000/api
     description: Servidor local
+  - url: https://backend-mocha-nu-99.vercel.app/api
+    description: Backend desplegado en Vercel
+
 tags:
   - name: Health
-    description: Endpoints de prueba de la API
+    description: Comprobacion basica de la API
   - name: Auth
-    description: Autenticacion y sesion de usuarios
+    description: Registro, autenticacion y sesion
   - name: Tasks
-    description: Gestion de tareas del usuario autenticado
+    description: Tareas del usuario autenticado
+  - name: Development
+    description: Endpoints temporales de desarrollo
+
 paths:
   /test:
     get:
       tags:
         - Health
+      operationId: testApi
       summary: Comprueba que la API responde
+      security: []
       responses:
         "200":
           description: API disponible
@@ -33,7 +47,9 @@ paths:
     post:
       tags:
         - Auth
-      summary: Registra un usuario nuevo
+      operationId: registerUser
+      summary: Registra un usuario
+      security: []
       requestBody:
         required: true
         content:
@@ -46,19 +62,13 @@ paths:
               password: pass123
       responses:
         "201":
-          description: Usuario registrado correctamente
+          description: Usuario registrado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
-              example:
-                user:
-                  id: 667f1f77bcf86cd799439011
-                  user: elias
-                  email: elias@correo.com
-                token: JWT_TOKEN
         "400":
-          description: Datos invalidos o usuario/email ya registrado
+          description: Datos invalidos o usuario/email existente
           content:
             application/json:
               schema:
@@ -70,7 +80,9 @@ paths:
     post:
       tags:
         - Auth
+      operationId: loginUser
       summary: Inicia sesion
+      security: []
       requestBody:
         required: true
         content:
@@ -82,17 +94,11 @@ paths:
               password: pass123
       responses:
         "200":
-          description: Login correcto
+          description: Sesion iniciada
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
-              example:
-                user:
-                  id: 667f1f77bcf86cd799439011
-                  user: elias
-                  email: elias@correo.com
-                token: JWT_TOKEN
         "401":
           description: Credenciales invalidas
           content:
@@ -106,35 +112,36 @@ paths:
     get:
       tags:
         - Auth
+      operationId: getCurrentUser
       summary: Obtiene el usuario autenticado
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Usuario autenticado
+          description: Datos publicos del usuario
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/CurrentUserResponse"
-              example:
-                user:
-                  id: 667f1f77bcf86cd799439011
-                  user: elias
-                  email: elias@correo.com
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /auth/logout:
     post:
       tags:
         - Auth
-      summary: Cierra sesion del lado del cliente
-      description: Como JWT es stateless, el backend solo devuelve un mensaje de exito.
+      operationId: logoutUser
+      summary: Cierra la sesion
+      description: |
+        El JWT es stateless. El backend confirma la operacion y el frontend
+        elimina el token y el usuario guardados localmente.
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Logout correcto
+          description: Sesion cerrada
           content:
             application/json:
               schema:
@@ -143,13 +150,73 @@ paths:
                 message: Logout successful
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /tasks:
+    get:
+      tags:
+        - Tasks
+      operationId: getTasks
+      summary: Lista las tareas del usuario
+      description: |
+        Devuelve las tareas filtradas y paginadas del usuario autenticado.
+        TotalTasks y TotalPages corresponden a los filtros aplicados.
+        UserStats contiene los totales generales del usuario sin filtros.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Status"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Resultado paginado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskPage"
+              example:
+                Tasks:
+                  - _id: 667f20c6bcf86cd799439022
+                    title: Comprar pan
+                    description: Pasar por la panaderia
+                    completed: false
+                    user: 667f1f77bcf86cd799439011
+                    createdAt: "2026-06-28T00:00:00.000Z"
+                    updatedAt: "2026-06-28T00:00:00.000Z"
+                Page: 1
+                TotalPages: 1
+                TotalTasks: 1
+                UserStats:
+                  Total: 20
+                  Completed: 8
+                  Pending: 12
+        "400":
+          description: Parametros de paginacion invalidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidPage:
+                  value:
+                    error: Page must be a positive integer
+                invalidLimit:
+                  value:
+                    error: Limit must be a positive integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
     post:
       tags:
         - Tasks
+      operationId: createTask
       summary: Crea una tarea
-      description: Actualmente el backend crea la tarea directamente desde el body, por lo que el campo user debe enviarse en la peticion.
+      description: |
+        El propietario se obtiene de req.user._id. El cliente no debe enviar
+        el campo user. El estado completed comienza en false.
       security:
         - bearerAuth: []
       requestBody:
@@ -161,35 +228,32 @@ paths:
             example:
               title: Comprar pan
               description: Pasar por la panaderia
-              completed: false
-              user: 667f1f77bcf86cd799439011
       responses:
         "201":
-          description: Tarea creada correctamente
+          description: Tarea creada
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Task"
         "400":
-          description: Datos invalidos
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: Task validation failed
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /tasks/all:
     get:
       tags:
-        - Tasks
-      summary: Lista las tareas del usuario autenticado
-      security:
-        - bearerAuth: []
+        - Development
+      operationId: getAllTasks
+      summary: Obtiene todas las tareas
+      description: |
+        Endpoint temporal y no protegido. Devuelve tareas de todos los usuarios.
+        Debe eliminarse o protegerse antes de trabajar con datos reales.
+      deprecated: true
+      security: []
       responses:
         "200":
-          description: Lista de tareas
+          description: Lista completa de tareas
           content:
             application/json:
               schema:
@@ -198,14 +262,14 @@ paths:
                   $ref: "#/components/schemas/Task"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
 
   /tasks/{id}:
     put:
       tags:
         - Tasks
+      operationId: updateTask
       summary: Actualiza una tarea
+      description: Solo actualiza una tarea que pertenezca al usuario autenticado.
       security:
         - bearerAuth: []
       parameters:
@@ -232,17 +296,20 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-    delete:
+    patch:
       tags:
         - Tasks
-      summary: Elimina una tarea
+      operationId: toggleTask
+      summary: Invierte el estado de una tarea
+      description: |
+        Cambia completed de false a true o de true a false. No requiere body.
       security:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
       responses:
         "200":
-          description: Tarea eliminada
+          description: Estado actualizado
           content:
             application/json:
               schema:
@@ -252,17 +319,19 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-    patch:
+    delete:
       tags:
         - Tasks
-      summary: Cambia el estado completed de una tarea
+      operationId: deleteTask
+      summary: Elimina una tarea
+      description: Solo elimina una tarea que pertenezca al usuario autenticado.
       security:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
       responses:
         "200":
-          description: Tarea actualizada
+          description: Tarea eliminada
           content:
             application/json:
               schema:
@@ -284,28 +353,88 @@ components:
       name: id
       in: path
       required: true
-      description: ID de la tarea
+      description: ObjectId de la tarea
       schema:
         type: string
+        pattern: "^[a-fA-F0-9]{24}$"
         example: 667f20c6bcf86cd799439022
+
+    Search:
+      name: search
+      in: query
+      required: false
+      description: Texto buscado en titulo o descripcion sin distinguir mayusculas
+      schema:
+        type: string
+      example: pan
+
+    Status:
+      name: status
+      in: query
+      required: false
+      description: Filtra por el valor booleano de completed
+      schema:
+        type: string
+        enum:
+          - "true"
+          - "false"
+      example: "false"
+
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Numero de pagina
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Cantidad maxima de tareas por pagina
+      schema:
+        type: integer
+        minimum: 1
+        default: 10
+      example: 5
 
   responses:
     Unauthorized:
-      description: Token faltante, invalido o usuario no autorizado
+      description: Token faltante, invalido, vencido o usuario inexistente
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/AuthErrorResponse"
-          example:
-            message: Not authorized
+          examples:
+            unauthorized:
+              value:
+                message: Not authorized
+            expired:
+              value:
+                message: Not authorized
+                code: TOKEN_EXPIRED
+
     BadRequest:
-      description: Error de validacion o recurso no encontrado/no autorizado
+      description: Datos invalidos, tarea inexistente o tarea de otro usuario
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
           example:
             error: Task not found or user not authorized
+
+    InternalServerError:
+      description: Error interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/MessageError"
+          example:
+            message: Internal server error
 
   schemas:
     TestResponse:
@@ -328,6 +457,8 @@ components:
           example: elias@correo.com
         password:
           type: string
+          format: password
+          writeOnly: true
           example: pass123
       required:
         - user
@@ -343,6 +474,8 @@ components:
           example: elias@correo.com
         password:
           type: string
+          format: password
+          writeOnly: true
           example: pass123
       required:
         - email
@@ -395,17 +528,8 @@ components:
         description:
           type: string
           example: Pasar por la panaderia
-        completed:
-          type: boolean
-          default: false
-          example: false
-        user:
-          type: string
-          description: ID del usuario propietario de la tarea.
-          example: 667f1f77bcf86cd799439011
       required:
         - title
-        - user
 
     UpdateTaskRequest:
       type: object
@@ -442,16 +566,66 @@ components:
         createdAt:
           type: string
           format: date-time
-          example: 2026-06-28T00:00:00.000Z
+          example: "2026-06-28T00:00:00.000Z"
         updatedAt:
           type: string
           format: date-time
-          example: 2026-06-28T00:00:00.000Z
+          example: "2026-06-28T00:00:00.000Z"
       required:
         - _id
         - title
         - completed
         - user
+        - createdAt
+        - updatedAt
+
+    TaskPage:
+      type: object
+      properties:
+        Tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        Page:
+          type: integer
+          minimum: 1
+          example: 1
+        TotalPages:
+          type: integer
+          minimum: 0
+          example: 1
+        TotalTasks:
+          type: integer
+          minimum: 0
+          example: 1
+        UserStats:
+          $ref: "#/components/schemas/UserStats"
+      required:
+        - Tasks
+        - Page
+        - TotalPages
+        - TotalTasks
+        - UserStats
+
+    UserStats:
+      type: object
+      properties:
+        Total:
+          type: integer
+          minimum: 0
+          example: 20
+        Completed:
+          type: integer
+          minimum: 0
+          example: 8
+        Pending:
+          type: integer
+          minimum: 0
+          example: 12
+      required:
+        - Total
+        - Completed
+        - Pending
 
     MessageResponse:
       type: object
@@ -482,6 +656,9 @@ components:
       properties:
         message:
           type: string
+        code:
+          type: string
+          example: TOKEN_EXPIRED
         error:
           type: string
       required:
