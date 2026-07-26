@@ -1,385 +1,457 @@
 # MiniTaskManager
 
-Documentacion del proyecto full stack MiniTaskManager. Incluye un backend con API REST en Express y MongoDB, y un frontend en React para autenticacion y gestion de tareas.
+Aplicacion full stack para registrar usuarios y administrar tareas personales. El
+backend expone una API REST con Express, MongoDB, Mongoose y JWT. El frontend
+consume esa API desde una interfaz creada con React y Vite.
 
-## Backend
+## Funcionalidades
 
-Backend para una API de gestion de tareas con autenticacion de usuarios, JWT, Express, MongoDB y Mongoose.
+- Registro, inicio de sesion y cierre de sesion.
+- Sesion persistida en `localStorage` mediante JWT.
+- Creacion, edicion, eliminacion y cambio de estado de tareas.
+- Tareas asociadas en el backend al usuario autenticado.
+- Busqueda por titulo o descripcion.
+- Filtro por estado completado o pendiente.
+- Paginacion y seleccion del limite de resultados.
+- Estadisticas generales del usuario: total, completadas y pendientes.
+- Despliegue independiente del frontend y backend en Vercel.
+- Persistencia de produccion en MongoDB Atlas.
 
-### Tecnologias
+## Tecnologias
+
+### Backend
 
 - Node.js
-- Express
-- MongoDB
-- Mongoose
-- JWT
+- Express 5
+- MongoDB y Mongoose
+- JSON Web Token
 - bcryptjs
-- dotenv
 - cors
+- dotenv
 
-### Requisitos
+### Frontend
 
-- Node.js instalado
-- MongoDB local o una URI de MongoDB disponible
-- npm
+- React 19
+- Vite 8
+- React Router DOM
+- Axios
+- Tailwind CSS
+- Oxlint
 
-### Instalacion
+## Estructura del proyecto
 
-Desde la carpeta `backend`:
+```text
+MiniTaskManager/
+  README.md
+  backend/
+    api/
+      index.js
+    docs/
+      openapi.yaml
+    src/
+      config/
+      controllers/
+      middlewares/
+      models/
+      routes/
+      services/
+      utils/
+      app.js
+    .env.example
+    package.json
+    server.js
+    vercel.json
+  frontend/
+    src/
+      app/
+      assets/
+      components/
+      context/
+      pages/
+      routers/
+      services/
+      styles/
+    package.json
+    vercel.json
+    vite.config.js
+```
+
+## Requisitos
+
+- Node.js y npm.
+- MongoDB local o un cluster de MongoDB Atlas.
+- Dos terminales para ejecutar frontend y backend localmente.
+
+## Instalacion
+
+Instalar las dependencias de cada aplicacion:
 
 ```bash
+cd backend
 npm install
 ```
 
-### Variables de entorno
-
-Crear un archivo `.env` dentro de `backend` tomando como base `.env.example`.
-
-Ejemplo:
-
-```env
-VITE_PORT=5000
-VITE_MONGO_URL=mongodb://localhost:27017
-VITE_MONGO_DB_NAME=task_manager
-VITE_JWT_SECRET=your_jwt_secret_key
-VITE_JWT_EXPIRES_IN=1h
+```bash
+cd frontend
+npm install
 ```
 
-Notas:
+## Configuracion del backend
 
-- `VITE_MONGO_URL` debe contener solo la URL del servidor MongoDB.
-- `VITE_MONGO_DB_NAME` contiene el nombre de la base de datos.
-- La conexion final se arma como `VITE_MONGO_URL/VITE_MONGO_DB_NAME`.
+Crear `backend/.env` tomando como referencia `backend/.env.example`:
 
-### Ejecutar el servidor
+```env
+PORT=5000
+MONGO_URL=mongodb://127.0.0.1:27017/task_manager
+JWT_SECRET=replace_with_a_secure_secret
+JWT_EXPIRES_IN=1h
+```
 
-Desde `backend`:
+Para MongoDB Atlas, `MONGO_URL` debe ser una URI completa. El nombre de la base
+de datos se coloca antes de los parametros `?`:
+
+```env
+MONGO_URL=mongodb+srv://<db_user>:<password>@<cluster>.mongodb.net/task_manager?retryWrites=true&w=majority
+```
+
+Consideraciones:
+
+- El usuario de la URI es un usuario de base de datos de Atlas, no la cuenta con
+  la que se ingresa al panel de Atlas.
+- Los caracteres especiales de la password deben estar codificados para una URL.
+- La conexion activa usa directamente `MONGO_URL`; no concatena el nombre de la
+  base desde otra variable.
+- `JWT_SECRET` debe definirse con un valor seguro en produccion.
+- No se deben subir archivos `.env` al repositorio.
+
+## Configuracion del frontend
+
+Crear `frontend/.env` para indicar la URL base de la API:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+Si no se define, el frontend utiliza `http://localhost:5000/api`.
+
+`VITE_API_URL` ya incluye el prefijo `/api`. Los servicios agregan solamente
+rutas como `/auth/login` o `/tasks`.
+
+## Ejecucion local
+
+Levantar primero el backend:
+
+```bash
+cd backend
+npm run dev
+```
+
+El servidor escucha por defecto en:
+
+```text
+http://localhost:5000
+```
+
+En otra terminal, levantar el frontend:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Vite muestra en la terminal la URL local, normalmente:
+
+```text
+http://localhost:5173
+```
+
+## Scripts
+
+### Backend
 
 ```bash
 npm run dev
 ```
 
-Por defecto, el servidor queda disponible en:
+Conecta MongoDB y ejecuta el servidor Express.
 
-```txt
-http://localhost:5000
+### Frontend
+
+```bash
+npm run dev
+npm run build
+npm run preview
+npm run lint
 ```
 
-Todas las rutas principales usan el prefijo:
+- `dev`: servidor de desarrollo.
+- `build`: genera la aplicacion de produccion en `dist`.
+- `preview`: sirve localmente la build.
+- `lint`: analiza el codigo con Oxlint.
 
-```txt
-/api
+## Autenticacion
+
+Al registrarse o iniciar sesion, la API devuelve el usuario publico y un JWT:
+
+```json
+{
+  "user": {
+    "id": "667f1f77bcf86cd799439011",
+    "user": "elias",
+    "email": "elias@correo.com"
+  },
+  "token": "JWT_TOKEN"
+}
 ```
 
-### Estructura
-
-```txt
-backend/
-  server.js
-  src/
-    app.js
-    config/
-      db.js
-      env.js
-    controllers/
-      auth.controller.js
-      task.controller.js
-    middlewares/
-      auth.middleware.js
-    models/
-      User.js
-      Task.js
-    routes/
-      index.js
-      auth.routes.js
-      task.routes.js
-    services/
-      auth.service.js
-      task.service.js
-    utils/
-      generateToken.js
-```
-
-### Autenticacion
-
-La API usa JWT. Las rutas protegidas requieren enviar el token en el header `Authorization`.
-
-Formato:
+Las rutas protegidas requieren:
 
 ```http
-Authorization: Bearer TOKEN_AQUI
+Authorization: Bearer JWT_TOKEN
 ```
 
-### Endpoints
+El middleware valida el token, busca al usuario y lo guarda en `req.user`. Al
+crear una tarea, el backend usa `req.user._id`; el frontend no envia el ID del
+propietario.
 
-#### GET `/api/test`
+El frontend guarda la sesion en:
 
-Devuelve un mensaje basico para comprobar que la API responde.
+- `mini_task_manager_token`
+- `mini_task_manager_user`
+
+Si la API responde `401` con `code: "TOKEN_EXPIRED"`, el interceptor de Axios
+elimina la sesion local y redirige a `/login`.
+
+## API REST
+
+La URL base local es:
+
+```text
+http://localhost:5000/api
+```
+
+La especificacion completa se encuentra en
+[`backend/docs/openapi.yaml`](backend/docs/openapi.yaml).
+
+### Endpoints de autenticacion
+
+| Metodo | Ruta | Protegida | Descripcion |
+| --- | --- | --- | --- |
+| `GET` | `/test` | No | Comprueba que la API responde |
+| `POST` | `/auth/register` | No | Registra un usuario |
+| `POST` | `/auth/login` | No | Inicia sesion |
+| `GET` | `/auth/me` | Si | Devuelve el usuario autenticado |
+| `POST` | `/auth/logout` | Si | Finaliza la sesion del cliente |
+
+### Endpoints de tareas
+
+| Metodo | Ruta | Protegida | Descripcion |
+| --- | --- | --- | --- |
+| `POST` | `/tasks` | Si | Crea una tarea para `req.user._id` |
+| `GET` | `/tasks` | Si | Lista, filtra y pagina las tareas del usuario |
+| `PUT` | `/tasks/:id` | Si | Actualiza una tarea del usuario |
+| `PATCH` | `/tasks/:id` | Si | Invierte el valor de `completed` |
+| `DELETE` | `/tasks/:id` | Si | Elimina una tarea del usuario |
+| `GET` | `/tasks/all` | No | Endpoint temporal que devuelve todas las tareas |
+
+`GET /tasks/all` no esta protegido y expone tareas de todos los usuarios. Se
+mantiene documentado porque existe en el backend actual, pero debe eliminarse o
+protegerse antes de utilizar la aplicacion con datos reales.
+
+### Crear una tarea
+
+Peticion:
+
+```http
+POST /api/tasks
+Authorization: Bearer JWT_TOKEN
+Content-Type: application/json
+```
+
+```json
+{
+  "title": "Comprar pan",
+  "description": "Pasar por la panaderia"
+}
+```
+
+El backend asigna automaticamente:
+
+- `user`: ID obtenido del JWT.
+- `completed`: `false` por defecto.
+
+### Consultar tareas
+
+`GET /api/tasks` acepta estos parametros:
+
+| Parametro | Tipo | Valor por defecto | Descripcion |
+| --- | --- | --- | --- |
+| `search` | string | vacio | Busca en titulo y descripcion sin distinguir mayusculas |
+| `status` | string booleano | vacio | `true` para completadas o `false` para pendientes |
+| `page` | entero positivo | `1` | Pagina solicitada |
+| `limit` | entero positivo | `10` | Cantidad maxima por pagina |
+
+Ejemplo:
+
+```http
+GET /api/tasks?search=pan&status=false&page=1&limit=5
+Authorization: Bearer JWT_TOKEN
+```
 
 Respuesta:
 
 ```json
 {
-  "message": "Welcome to the Mini Task Manager API"
-}
-```
-
-### Auth
-
-#### POST `/api/auth/register`
-
-Registra un usuario nuevo.
-
-Body:
-
-```json
-{
-  "user": "elias",
-  "email": "elias@correo.com",
-  "password": "pass123"
-}
-```
-
-Respuesta exitosa `201`:
-
-```json
-{
-  "user": {
-    "id": "USER_ID",
-    "user": "elias",
-    "email": "elias@correo.com"
-  },
-  "token": "JWT_TOKEN"
-}
-```
-
-Errores posibles:
-
-```json
-{
-  "message": "User or email already exists"
-}
-```
-
-#### POST `/api/auth/login`
-
-Inicia sesion con email y password.
-
-Body:
-
-```json
-{
-  "email": "elias@correo.com",
-  "password": "pass123"
-}
-```
-
-Respuesta exitosa `200`:
-
-```json
-{
-  "user": {
-    "id": "USER_ID",
-    "user": "elias",
-    "email": "elias@correo.com"
-  },
-  "token": "JWT_TOKEN"
-}
-```
-
-Errores posibles:
-
-```json
-{
-  "message": "Invalid credentials"
-}
-```
-
-#### GET `/api/auth/me`
-
-Devuelve los datos del usuario autenticado.
-
-Requiere token.
-
-Respuesta exitosa `200`:
-
-```json
-{
-  "user": {
-    "id": "USER_ID",
-    "user": "elias",
-    "email": "elias@correo.com"
+  "Tasks": [
+    {
+      "_id": "667f20c6bcf86cd799439022",
+      "title": "Comprar pan",
+      "description": "Pasar por la panaderia",
+      "completed": false,
+      "user": "667f1f77bcf86cd799439011",
+      "createdAt": "2026-06-28T00:00:00.000Z",
+      "updatedAt": "2026-06-28T00:00:00.000Z"
+    }
+  ],
+  "Page": 1,
+  "TotalPages": 1,
+  "TotalTasks": 1,
+  "UserStats": {
+    "Total": 20,
+    "Completed": 8,
+    "Pending": 12
   }
 }
 ```
 
-#### POST `/api/auth/logout`
+- `TotalTasks` y `TotalPages` corresponden a los filtros aplicados.
+- `UserStats` siempre corresponde a todas las tareas del usuario autenticado,
+  sin depender de los filtros ni de la pagina.
+- `page` y `limit` deben ser enteros mayores que cero. Por ejemplo,
+  `?page=-10&limit=abc` devuelve `400`.
 
-Cierra sesion del lado del cliente. Como JWT es stateless, el backend solo devuelve un mensaje de exito.
+## Frontend
 
-Requiere token.
+### Rutas
 
-Respuesta exitosa `200`:
+| Ruta | Acceso | Comportamiento |
+| --- | --- | --- |
+| `/` | Publico | Redirige a `/tasks` |
+| `/login` | Publico | Login y registro; redirige si ya existe sesion |
+| `/tasks` | Protegido | Administracion de tareas |
+| `*` | Publico | Redirige a `/tasks` |
 
-```json
-{
-  "message": "Logout successful"
-}
+### Flujo de tareas
+
+1. Al entrar en `/tasks`, se solicitan las tareas con pagina `1` y limite `10`.
+2. Los controles de busqueda, estado y limite modifican un formulario local.
+3. La consulta se ejecuta al presionar `Aplicar filtros`.
+4. Al aplicar o resetear filtros se vuelve a la pagina `1`.
+5. Los botones de paginacion cambian `page` y cargan los resultados
+   correspondientes.
+6. Crear, editar, eliminar o cambiar el estado vuelve a cargar tareas,
+   paginacion y estadisticas.
+7. Los mensajes exitosos desaparecen automaticamente despues de 3 segundos.
+
+## Despliegue en Vercel
+
+El monorepositorio se despliega como dos proyectos independientes.
+
+### Proyecto backend
+
+- Root Directory: `backend`
+- Variables requeridas:
+
+```env
+MONGO_URL=mongodb+srv://<db_user>:<password>@<cluster>.mongodb.net/task_manager?retryWrites=true&w=majority
+JWT_SECRET=replace_with_a_secure_secret
+JWT_EXPIRES_IN=1h
 ```
 
-### Tasks
+El cluster de Atlas debe aceptar conexiones provenientes de Vercel. Para una
+aplicacion de practica puede utilizarse temporalmente `0.0.0.0/0` en Network
+Access, junto con credenciales seguras y permisos minimos para el usuario de la
+base.
 
-Todas las rutas de tareas requieren token.
+### Proyecto frontend
 
-#### POST `/api/tasks`
+- Root Directory: `frontend`
+- Variable requerida:
 
-Crea una tarea.
-
-Body actual:
-
-```json
-{
-  "title": "Comprar pan",
-  "description": "Pasar por la panaderia",
-  "completed": false,
-  "user": "USER_ID"
-}
+```env
+VITE_API_URL=https://<backend-domain>.vercel.app/api
 ```
 
-Respuesta exitosa `201`:
+El archivo `frontend/vercel.json` reescribe las rutas hacia `index.html` para
+que React Router funcione al abrir directamente `/login` o `/tasks`.
 
-```json
-{
-  "_id": "TASK_ID",
-  "title": "Comprar pan",
-  "description": "Pasar por la panaderia",
-  "completed": false,
-  "user": "USER_ID",
-  "createdAt": "2026-06-28T00:00:00.000Z",
-  "updatedAt": "2026-06-28T00:00:00.000Z"
-}
+Las variables de Vite se incorporan durante la build. Despues de cambiar
+`VITE_API_URL`, se debe generar un nuevo deployment.
+
+## CORS
+
+El backend aplica actualmente:
+
+```js
+app.use(cors({ origin: '*' }))
 ```
 
-Nota tecnica: aunque la ruta esta protegida, el controlador actual crea la tarea directamente con `req.body`. Por eso, de momento, el body debe incluir el campo `user`.
+Esto permite solicitudes desde cualquier origen y simplifica las pruebas. Para
+un entorno productivo real conviene reemplazar `*` por una lista controlada que
+incluya el dominio del frontend y, si corresponde, `http://localhost:5173`.
 
-#### GET `/api/tasks`
+## Modelos
 
-Lista las tareas del usuario autenticado.
+### User
 
-Respuesta exitosa `200`:
+- `user`: string requerido, unico y sin espacios laterales.
+- `email`: string requerido, unico, normalizado a minusculas.
+- `password`: string requerido y almacenado como hash de bcrypt.
+- `createdAt` y `updatedAt`: timestamps automaticos.
 
-```json
-[
-  {
-    "_id": "TASK_ID",
-    "title": "Comprar pan",
-    "description": "Pasar por la panaderia",
-    "completed": false,
-    "user": "USER_ID",
-    "createdAt": "2026-06-28T00:00:00.000Z",
-    "updatedAt": "2026-06-28T00:00:00.000Z"
-  }
-]
-```
+### Task
 
-#### PUT `/api/tasks/:id`
+- `title`: string requerido.
+- `description`: string opcional.
+- `completed`: boolean, `false` por defecto.
+- `user`: ObjectId requerido con referencia a `User`.
+- `createdAt` y `updatedAt`: timestamps automaticos.
 
-Actualiza una tarea del usuario autenticado.
+Las operaciones de actualizacion, cambio de estado y eliminacion buscan
+simultaneamente por ID de tarea e ID del usuario autenticado.
 
-Body de ejemplo:
-
-```json
-{
-  "title": "Comprar pan y leche",
-  "description": "Pasar por la panaderia y el supermercado",
-  "completed": true
-}
-```
-
-Respuesta exitosa `200`:
-
-```json
-{
-  "_id": "TASK_ID",
-  "title": "Comprar pan y leche",
-  "description": "Pasar por la panaderia y el supermercado",
-  "completed": true,
-  "user": "USER_ID"
-}
-```
-
-Errores posibles:
-
-```json
-{
-  "error": "Task not found or user not authorized"
-}
-```
-
-#### DELETE `/api/tasks/:id`
-
-Elimina una tarea del usuario autenticado.
-
-Respuesta exitosa `200`:
-
-```json
-{
-  "_id": "TASK_ID",
-  "title": "Comprar pan",
-  "description": "Pasar por la panaderia",
-  "completed": false,
-  "user": "USER_ID"
-}
-```
-
-#### PATCH `/api/tasks/:id`
-
-Cambia el valor de `completed` de una tarea del usuario autenticado.
-
-Respuesta exitosa `200`:
-
-```json
-{
-  "_id": "TASK_ID",
-  "title": "Comprar pan",
-  "description": "Pasar por la panaderia",
-  "completed": true,
-  "user": "USER_ID"
-}
-```
-
-### Modelos
-
-#### User
-
-Campos:
-
-- `user`: string, requerido, unico
-- `email`: string, requerido, unico
-- `password`: string, requerido
-- `createdAt`: fecha generada automaticamente
-- `updatedAt`: fecha generada automaticamente
-
-Antes de guardar, la password se hashea con bcrypt.
-
-#### Task
-
-Campos:
-
-- `title`: string, requerido
-- `description`: string, opcional
-- `completed`: boolean, por defecto `false`
-- `user`: ObjectId, referencia a `User`, requerido
-- `createdAt`: fecha generada automaticamente
-- `updatedAt`: fecha generada automaticamente
-
-### Respuestas de error comunes
+## Errores comunes
 
 Token faltante o invalido:
 
 ```json
 {
   "message": "Not authorized"
+}
+```
+
+Token vencido:
+
+```json
+{
+  "message": "Not authorized",
+  "code": "TOKEN_EXPIRED"
+}
+```
+
+Paginacion invalida:
+
+```json
+{
+  "error": "Page must be a positive integer"
+}
+```
+
+Tarea inexistente o perteneciente a otro usuario:
+
+```json
+{
+  "error": "Task not found or user not authorized"
 }
 ```
 
@@ -390,210 +462,3 @@ Endpoint inexistente:
   "message": "Endpoint not found"
 }
 ```
-
-Error interno:
-
-```json
-{
-  "message": "Internal server error"
-}
-```
-
-## Frontend
-
-Aplicacion web para consumir la API de MiniTaskManager. Permite registrar usuarios, iniciar sesion, cerrar sesion y administrar tareas desde una interfaz en React.
-
-### Tecnologias
-
-- React
-- Vite
-- React Router DOM
-- Axios
-- Tailwind CSS
-- Oxlint
-
-### Requisitos
-
-- Node.js instalado
-- npm
-- Backend ejecutandose y disponible para recibir peticiones
-
-### Instalacion
-
-Desde la carpeta `frontend`:
-
-```bash
-npm install
-```
-
-### Variables de entorno
-
-El frontend puede usar una variable de entorno para indicar la URL base de la API.
-
-Crear un archivo `.env` dentro de `frontend` si se necesita cambiar la URL por defecto:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-Si no se define `VITE_API_URL`, la aplicacion usa por defecto:
-
-```txt
-http://localhost:5000/api
-```
-
-### Ejecutar el frontend
-
-Desde `frontend`:
-
-```bash
-npm run dev
-```
-
-Vite levantara la aplicacion en una URL local, normalmente:
-
-```txt
-http://localhost:5173
-```
-
-### Scripts disponibles
-
-Desde `frontend`:
-
-```bash
-npm run dev
-```
-
-Inicia el servidor de desarrollo.
-
-```bash
-npm run build
-```
-
-Genera la version de produccion en la carpeta `dist`.
-
-```bash
-npm run preview
-```
-
-Sirve localmente la build generada.
-
-```bash
-npm run lint
-```
-
-Ejecuta Oxlint para revisar el codigo del frontend.
-
-### Estructura
-
-```txt
-frontend/
-  index.html
-  vite.config.js
-  src/
-    app/
-      App.jsx
-      main.jsx
-    assets/
-      hero.png
-      react.svg
-      vite.svg
-    components/
-      Alert.jsx
-      TaskForm.jsx
-      TaskList.jsx
-    context/
-      AuthContext.js
-      AuthProvider.jsx
-      useAuth.js
-    pages/
-      LoginPage.jsx
-      TasksPage.jsx
-    routers/
-      AppRouter.jsx
-    services/
-      api.js
-      auth.service.js
-      task.service.js
-    styles/
-      index.css
-```
-
-### Rutas del frontend
-
-#### `/`
-
-Redirige a `/tasks`.
-
-#### `/login`
-
-Pantalla publica para iniciar sesion o registrar un usuario nuevo.
-
-Si el usuario ya esta autenticado, redirige a `/tasks`.
-
-#### `/tasks`
-
-Pantalla protegida para listar, crear, editar, eliminar y marcar tareas como completadas o pendientes.
-
-Si el usuario no esta autenticado, redirige a `/login`.
-
-#### `*`
-
-Cualquier ruta no definida redirige a `/tasks`.
-
-### Autenticacion en el frontend
-
-El estado de autenticacion se maneja con `AuthProvider` y `AuthContext`.
-
-Cuando el usuario inicia sesion o se registra correctamente, se guardan en `localStorage`:
-
-- `mini_task_manager_token`: JWT devuelto por el backend
-- `mini_task_manager_user`: datos del usuario autenticado
-
-El cliente Axios agrega automaticamente el token en cada peticion usando el header:
-
-```http
-Authorization: Bearer TOKEN_AQUI
-```
-
-Al cerrar sesion, el frontend llama al endpoint de logout y luego elimina los datos guardados en `localStorage`.
-
-### Servicios HTTP
-
-El frontend centraliza las peticiones HTTP en `src/services`.
-
-#### `api.js`
-
-Configura una instancia de Axios con:
-
-- `baseURL`: valor de `VITE_API_URL` o `http://localhost:5000/api`
-- Header `Content-Type: application/json`
-- Interceptor para agregar el token JWT si existe en `localStorage`
-
-#### `auth.service.js`
-
-Consume los endpoints de autenticacion:
-
-- `POST /auth/login`
-- `POST /auth/register`
-- `GET /auth/me`
-- `POST /auth/logout`
-
-#### `task.service.js`
-
-Consume los endpoints de tareas:
-
-- `GET /tasks`
-- `POST /tasks`
-- `PUT /tasks/:id`
-- `DELETE /tasks/:id`
-- `PATCH /tasks/:id`
-
-### Flujo principal de uso
-
-1. El usuario entra a `/login`.
-2. Puede iniciar sesion o crear una cuenta.
-3. Al autenticarse, el frontend guarda el token y redirige a `/tasks`.
-4. En `/tasks`, se cargan las tareas del usuario autenticado.
-5. El usuario puede crear, editar, eliminar, actualizar la lista o cambiar el estado de una tarea.
-6. Al cerrar sesion, se limpia la sesion local y se vuelve al flujo publico.
