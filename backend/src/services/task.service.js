@@ -118,11 +118,14 @@ async function toggleTask(taskId, userId){
 }
 
 async function getAllTasks(){
+    console.log("Servicio")
     return new Promise(async (resolve, reject) => {
         try {
             const tasks = await Task.find().sort({ createdAt: -1 });
+            console.log("resuelve y devuelve el resultado")
             resolve(tasks);
         } catch (err) {
+            console.log("error en el servicio")
             reject(err);
         }
     });

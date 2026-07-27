@@ -1,4 +1,4 @@
-import { registerUser, loginUser, getCurrentUser, logoutUser } from '../services/auth.service.js';
+import { registerUser, loginUser, getCurrentUser, logoutUser, getUsers } from '../services/auth.service.js';
 
 async function register(req, res){
     try {
@@ -55,4 +55,13 @@ async function logout(req, res){
     }
 }
 
-export { register, login, currentUser, logout };
+async function getAllUsers(req, res){
+    try{
+        const users = await getUsers(); 
+        res.status(200).json(users); 
+    } catch(err){
+        res.status(500).json({ message: err.message });
+    }
+}
+
+export { register, login, currentUser, logout, getAllUsers };

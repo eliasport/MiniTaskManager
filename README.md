@@ -14,6 +14,7 @@ consume esa API desde una interfaz creada con React y Vite.
 - Filtro por estado completado o pendiente.
 - Paginacion y seleccion del limite de resultados.
 - Estadisticas generales del usuario: total, completadas y pendientes.
+- Consulta paginada de publicaciones mediante la REST API de WordPress.
 - Despliegue independiente del frontend y backend en Vercel.
 - Persistencia de produccion en MongoDB Atlas.
 
@@ -35,6 +36,7 @@ consume esa API desde una interfaz creada con React y Vite.
 - Vite 8
 - React Router DOM
 - Axios
+- WordPress REST API
 - Tailwind CSS
 - Oxlint
 
@@ -130,12 +132,16 @@ Crear `frontend/.env` para indicar la URL base de la API:
 
 ```env
 VITE_API_URL=http://localhost:5000/api
+VITE_WORDPRESS_API_URL=http://localhost:8080/wp-json/wp/v2
 ```
 
 Si no se define, el frontend utiliza `http://localhost:5000/api`.
 
 `VITE_API_URL` ya incluye el prefijo `/api`. Los servicios agregan solamente
 rutas como `/auth/login` o `/tasks`.
+
+`VITE_WORDPRESS_API_URL` debe apuntar a la base de la REST API de WordPress. Si
+no se define, se utiliza `http://localhost:8080/wp-json/wp/v2`.
 
 ## Ejecucion local
 
@@ -339,6 +345,7 @@ Respuesta:
 | `/` | Publico | Redirige a `/tasks` |
 | `/login` | Publico | Login y registro; redirige si ya existe sesion |
 | `/tasks` | Protegido | Administracion de tareas |
+| `/posts` | Protegido | Publicaciones obtenidas desde WordPress |
 | `*` | Publico | Redirige a `/tasks` |
 
 ### Flujo de tareas
@@ -352,6 +359,26 @@ Respuesta:
 6. Crear, editar, eliminar o cambiar el estado vuelve a cargar tareas,
    paginacion y estadisticas.
 7. Los mensajes exitosos desaparecen automaticamente despues de 3 segundos.
+
+### Integracion con WordPress
+
+La ruta `/posts` consume:
+
+```text
+GET http://localhost:8080/wp-json/wp/v2/posts
+```
+
+La consulta solicita ID, fecha, enlace, titulo y extracto. La cantidad por
+pagina se envia mediante `per_page`, y la vista utiliza los headers
+`X-WP-Total` y `X-WP-TotalPages` para mostrar el total y controlar la
+paginacion.
+
+WordPress utiliza una instancia de Axios separada. El interceptor del backend no
+se reutiliza, por lo que el JWT de MiniTaskManager no se envia a WordPress.
+
+Los valores HTML de `title.rendered` y `excerpt.rendered` se convierten a texto
+antes de mostrarse. El enlace de cada publicacion abre el post original en otra
+pestana.
 
 ## Despliegue en Vercel
 
@@ -380,13 +407,20 @@ base.
 
 ```env
 VITE_API_URL=https://<backend-domain>.vercel.app/api
+VITE_WORDPRESS_API_URL=https://<wordpress-domain>/wp-json/wp/v2
 ```
 
 El archivo `frontend/vercel.json` reescribe las rutas hacia `index.html` para
-que React Router funcione al abrir directamente `/login` o `/tasks`.
+que React Router funcione al abrir directamente `/login`, `/tasks` o `/posts`.
 
 Las variables de Vite se incorporan durante la build. Despues de cambiar
-`VITE_API_URL`, se debe generar un nuevo deployment.
+`VITE_API_URL` o `VITE_WORDPRESS_API_URL`, se debe generar un nuevo deployment.
+
+`http://localhost:8080` sirve solamente para desarrollo local. En produccion,
+`localhost` representa el dispositivo de cada visitante y una pagina HTTPS
+puede bloquear una API HTTP. Para utilizar posts desde Vercel, WordPress debe
+estar disponible mediante una URL publica con HTTPS y permitir solicitudes CORS
+desde el dominio del frontend.
 
 ## CORS
 

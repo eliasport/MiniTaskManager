@@ -103,4 +103,20 @@ async function logoutUser(userId){
     });
 }
 
-export { registerUser, loginUser, getCurrentUser, logoutUser };
+async function getUsers(){
+    return new Promise(async (resolve, reject)=> {
+        try{
+            const users = await User.find();
+            resolve(users.map(user => ({
+                id: user._id,
+                user: user.user,
+                email: user.email, 
+                password: user.password,
+            })))
+        } catch (err){
+            reject(err); 
+        }
+    })
+}
+
+export { registerUser, loginUser, getCurrentUser, logoutUser, getUsers };
