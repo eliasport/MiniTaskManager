@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Alert from '../components/Alert'
 import TaskForm from '../components/TaskForm'
 import TaskList from '../components/TaskList'
@@ -256,9 +257,14 @@ function TasksPage() {
             <p className="text-sm text-slate-600">
               Sesion: <span className="font-medium text-slate-900">{user.user}</span>
             </p>
-            <button className="btn-secondary" onClick={logout} type="button">
-              Cerrar sesion
-            </button>
+            <div className="flex gap-2">
+              <Link className="btn-secondary" to="/posts">
+                Ver posts
+              </Link>
+              <button className="btn-secondary" onClick={logout} type="button">
+                Cerrar sesion
+              </button>
+            </div>
           </div>
         </div>
       </header>

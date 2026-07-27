@@ -62,6 +62,7 @@ async function toggleTaskController(req, res) {
 }
 
 async function getAllTasksController(req, res) {
+    console.log("controllador"); 
     try {
         const tasks = await getAllTasks(); 
         res.status(200).json(tasks);

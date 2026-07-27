@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import useAuth from '../context/useAuth'
 import LoginPage from '../pages/LoginPage'
+import PostsPage from '../pages/PostsPage'
 import TasksPage from '../pages/TasksPage'
 
 function ProtectedRoute({ children }) {
@@ -41,6 +42,14 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <TasksPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/posts"
+          element={
+            <ProtectedRoute>
+              <PostsPage />
             </ProtectedRoute>
           }
         />
