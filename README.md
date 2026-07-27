@@ -4,6 +4,12 @@ Aplicacion full stack para registrar usuarios y administrar tareas personales. E
 backend expone una API REST con Express, MongoDB, Mongoose y JWT. El frontend
 consume esa API desde una interfaz creada con React y Vite.
 
+## Aplicacion desplegada
+
+Acceso al proyecto en Vercel:
+
+[https://frontend-kappa-inky-18.vercel.app/login](https://frontend-kappa-inky-18.vercel.app/login)
+
 ## Funcionalidades
 
 - Registro, inicio de sesion y cierre de sesion.
